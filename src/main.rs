@@ -131,21 +131,28 @@ fn wall() -> String {
 }
 
 fn gtemp() -> String {
+    let mut fb = false;
     let nvsmi = match Command::new("/usr/bin/nvidia-smi")
         .args(&["stats", "-d", "temp", "-c", "1"])
         .output()
     {
         Ok(r) => from_utf8(&r.stdout).unwrap().to_owned(),
-        Err(_) => "!?".to_string()
+        Err(_) => {
+            fb = true;
+            "!?".to_string()
+        }
     };
-    if nvsmi == "!?" {
-        nvsmi
-    }
-    else {
-        let x = nvsmi.split(", ").collect::<Vec<&str>>();
-        let mut r = x.last().unwrap().to_string();
-        r.pop();
-        r
+    match fb {
+        true => nvsmi,
+        false => {
+            let x = nvsmi.split(", ").collect::<Vec<&str>>();
+            let mut r = x.last().unwrap().to_string();
+            r.pop();
+            match r.parse::<u8>() {
+                Ok(_) => r,
+                Err(_) => nvsmi
+            }
+        }
     }
 }
 
